@@ -1,18 +1,28 @@
+require("dotenv").config();
 const http = require("http");
 const express = require("express");
 const socketio = require("socket.io");
 const cors = require("cors");
-
+const connectDatabase = require("./config/connect");
 const { addUser, removeUser, getUser, getUsersInRoom } = require("./users");
+require("./models");
+const router = require("./routes");
 
-const router = require("./router");
+// const router = require("./router");
 
 const app = express();
 const server = http.createServer(app);
 const io = socketio(server);
 
 app.use(cors());
-app.use(router);
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.get("/", (req, res) => {
+  res.status(200).json({ status: 200, message: "working grate!" });
+});
+
+app.use("/api/v1", router);
 
 io.on("connect", (socket) => {
   socket.on("join", ({ name, room }, callback) => {
@@ -62,6 +72,9 @@ io.on("connect", (socket) => {
   });
 });
 
+connectDatabase();
 server.listen(process.env.PORT || 5000, () =>
-  console.log(`Server has started.`)
+  console.log(
+    `Server has started. http://localhost:${process.env.PORT || 5000}/`
+  )
 );

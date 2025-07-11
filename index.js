@@ -1,18 +1,20 @@
 require("dotenv").config();
 const http = require("http");
 const express = require("express");
-const socketio = require("socket.io");
 const cors = require("cors");
 const connectDatabase = require("./config/connect");
-const { addUser, removeUser, getUser, getUsersInRoom } = require("./users");
 require("./models");
 const router = require("./routes");
-
-// const router = require("./router");
+const initSocket = require("./socket");
+const Server = require("socket.io");
 
 const app = express();
+
+// io server
 const server = http.createServer(app);
-const io = socketio(server);
+const io = new Server(server, {
+  cors: { origin: process.env.FRONTEND_URL, methods: ["GET", "POST"] },
+});
 
 app.use(cors());
 app.use(express.json());
@@ -24,52 +26,12 @@ app.get("/", (req, res) => {
 
 app.use("/api/v1", router);
 
-io.on("connect", (socket) => {
-  socket.on("join", ({ name, room }, callback) => {
-    const { error, user } = addUser({ id: socket.id, name, room });
+initSocket(io);
 
-    if (error) return callback(error);
-
-    socket.join(user.room);
-
-    socket.emit("message", {
-      user: "admin",
-      text: `${user.name}, welcome to room ${user.room}.`,
-    });
-    socket.broadcast
-      .to(user.room)
-      .emit("message", { user: "admin", text: `${user.name} has joined!` });
-
-    io.to(user.room).emit("roomData", {
-      room: user.room,
-      users: getUsersInRoom(user.room),
-    });
-
-    callback();
-  });
-
-  socket.on("sendMessage", (message, callback) => {
-    const user = getUser(socket.id);
-
-    io.to(user.room).emit("message", { user: user.name, text: message });
-
-    callback();
-  });
-
-  socket.on("disconnect", () => {
-    const user = removeUser(socket.id);
-
-    if (user) {
-      io.to(user.room).emit("message", {
-        user: "Admin",
-        text: `${user.name} has left.`,
-      });
-      io.to(user.room).emit("roomData", {
-        room: user.room,
-        users: getUsersInRoom(user.room),
-      });
-    }
-  });
+// global error handler
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).json({ message: "Server error", status: 500 });
 });
 
 connectDatabase();

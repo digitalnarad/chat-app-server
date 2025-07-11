@@ -1,1 +1,3 @@
-module.exports.Users = require("./Users");
+module.exports.User = require("./User");
+module.exports.Chat = require("./Chat");
+module.exports.Message = require("./Message");

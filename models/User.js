@@ -14,6 +14,7 @@ const userSchema = mongoose.Schema(
     email: {
       type: String,
       required: true,
+      unique: true,
     },
     password: {
       type: String,
@@ -27,6 +28,7 @@ const userSchema = mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    contacts: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   },
   { timestamps: true }
 );

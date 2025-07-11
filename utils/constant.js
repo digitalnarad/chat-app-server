@@ -21,7 +21,9 @@ const msg = {
 };
 
 const modelName = {
-  USER: "Users",
+  USER: "User",
+  CHAT: "Chat",
+  MESSAGE: "Message",
 };
 
 const hashPassword = (password) => {

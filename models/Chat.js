@@ -3,12 +3,17 @@ const { modelName } = require("../utils/constant");
 
 const chatSchema = mongoose.Schema(
   {
-    isGroup: { type: Boolean, default: false },
-    name: { type: String }, // only for groups
+    is_group: { type: Boolean, default: false },
+    name: {
+      type: String,
+      required: function () {
+        return this.is_group;
+      },
+    }, // only for groups
     participants: [
       { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     ],
-    latestMessage: { type: mongoose.Schema.Types.ObjectId, ref: "Message" },
+    latest_message: { type: mongoose.Schema.Types.ObjectId, ref: "Message" },
   },
   { timestamps: true }
 );

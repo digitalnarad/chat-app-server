@@ -101,17 +101,17 @@ const populate = async (
 };
 
 // count documents
-const countDocument = async (modelName, criteria,) => {
-  return await mongoose.model(modelName).countDocuments(criteria)
-}
+const countDocument = async (modelName, criteria) => {
+  return await mongoose.model(modelName).countDocuments(criteria);
+};
 
 const deleteDocument = async (model, criteria) => {
   return await mongoose.model(model).findOneAndDelete(criteria);
-}
+};
 
-const deleteManyDocument = async(model, criteria) =>{
+const deleteManyDocument = async (model, criteria) => {
   return await mongoose.model(model).deleteMany(criteria);
-}
+};
 
 module.exports = {
   findOne,

@@ -28,6 +28,18 @@ const userSchema = mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    active_status: {
+      status: {
+        type: String,
+        enum: ["online", "offline", "away"],
+        default: "offline",
+      },
+      at: {
+        type: Date,
+        default: Date.now,
+      },
+    },
+
     contacts: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   },
   { timestamps: true }

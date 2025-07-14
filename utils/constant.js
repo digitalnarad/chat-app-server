@@ -18,12 +18,17 @@ const msg = {
   headerMissing: "Header is missing",
   invalidToken: "Invalid Token",
   tokenExpired: "Token is expired or Invalid",
+  chatCreatedSuccess: "Chat created successfully",
+  chatFetchSuccess: "Chats fetched successfully",
+  chatFetchFailed: "Failed to fetch chats",
+  chatCreationFailed: "Chat creation failed",
+  chatParticipantsMissing: "Chat participants are missing",
 };
 
 const modelName = {
-  USER: "User",
-  CHAT: "Chat",
-  MESSAGE: "Message",
+  USER: "users",
+  CHAT: "chats",
+  MESSAGE: "messages",
 };
 
 const hashPassword = (password) => {

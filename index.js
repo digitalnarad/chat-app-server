@@ -6,7 +6,7 @@ const connectDatabase = require("./config/connect");
 require("./models");
 const router = require("./routes");
 const initSocket = require("./socket");
-const Server = require("socket.io");
+const { Server } = require("socket.io");
 
 const app = express();
 

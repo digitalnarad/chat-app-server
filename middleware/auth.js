@@ -18,8 +18,7 @@ exports.isAuthenticated = catchAsyncFunc(async (req, res, next) => {
   if (!user) return response401(res, msg.tokenExpired);
   if (!user.is_active) return response401(res, msg.accountInActivated);
 
-  req.user = user._id;
-  // req.role = user.role;
+  req.userId = user._id;
 
   next();
 });

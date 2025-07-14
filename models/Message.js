@@ -13,6 +13,11 @@ const messageSchema = mongoose.Schema(
       ref: "User",
       required: true,
     }, // it for find whose are send message in two user by chat
+    type: {
+      type: String,
+      enum: ["text", "image", "file", "join-chat"],
+      default: "text",
+    },
     text: { type: String, required: true },
     readBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // handle massage seen or note
   },

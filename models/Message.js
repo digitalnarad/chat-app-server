@@ -7,19 +7,19 @@ const messageSchema = mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Chat",
       required: true,
-    }, // chat_id hold both user identity
+    },
     sender: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-    }, // it for find whose are send message in two user by chat
-    type: {
+    },
+    message_type: {
       type: String,
-      enum: ["text", "image", "file", "join-chat"],
+      enum: ["text", "image", "file", "chat-info"],
       default: "text",
     },
-    text: { type: String, required: true },
-    readBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // handle massage seen or note
+    message: { type: String, required: true },
+    readBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   },
   { timestamps: true }
 );

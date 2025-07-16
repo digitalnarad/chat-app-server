@@ -1,7 +1,7 @@
 // /utils/socket.js
 
 const { verifyToken } = require("./lib/token_manager");
-const { user_services } = require("./service");
+const { user_services, message_services, chat_services } = require("./service");
 
 module.exports = function initSocket(io) {
   // 1️⃣ Authenticate every socket connection
@@ -53,31 +53,57 @@ module.exports = function initSocket(io) {
     });
 
     // ✉️ Send a new message
-    socket.on("send-message", async ({ chatId, message }) => {
-      try {
-        console.log("message", message);
-        // const msg = await Message.create({
-        //   chat: chatId,
-        //   sender: socket.userId,
-        //   text: message,
-        // });
+    socket.on(
+      "send-message",
+      async ({ chat_id, message, message_type }, callback) => {
+        try {
+          const chat = await chat_services.findChat({ _id: chat_id });
+          if (!chat) {
+            return callback({
+              success: false,
+              message: "Chat not found",
+              payload: {},
+            });
+          }
 
-        // Update latestMessage on the chat
-        // await Chat.findByIdAndUpdate(chatId, {
-        //   latestMessage: msg._id,
-        //   updatedAt: Date.now(),
-        // });
+          const newMessage = await message_services.registerMessage({
+            chat_id: chat_id,
+            sender: socket.userId,
+            message: message,
+            message_type: message_type,
+          });
 
-        // Populate sender before broadcast
-        // const fullMsg = await msg.populate(
-        //   "sender",
-        //   "first_name last_name avatarUrl"
-        // );
-        io.to(chatId).emit("receive-message", message);
-      } catch (err) {
-        console.error("Error in send-message:", err);
+          if (!newMessage) {
+            return callback({
+              success: false,
+              message: "Message creation failed",
+              payload: {},
+            });
+          }
+
+          await chat_services.updateChat(
+            { _id: chat_id },
+            {
+              latestMessage: newMessage._id,
+              updatedAt: Date.now(),
+            }
+          );
+
+          io.to(chat_id).emit("receive-message", newMessage);
+          callback({
+            success: true,
+            message: "Message sent successfully",
+            payload: newMessage,
+          });
+        } catch (err) {
+          callback({
+            success: false,
+            message: "Internal server error",
+            payload: {},
+          });
+        }
       }
-    });
+    );
 
     // 💬 Typing indicator
     socket.on("typing", ({ chatId, isTyping }) => {

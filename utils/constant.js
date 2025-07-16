@@ -23,6 +23,11 @@ const msg = {
   chatFetchFailed: "Failed to fetch chats",
   chatCreationFailed: "Chat creation failed",
   chatParticipantsMissing: "Chat participants are missing",
+  messageCreatedSuccess: "Message created successfully",
+  messageFetchSuccess: "Messages fetched successfully",
+  messageFetchFailed: "Failed to fetch messages",
+  messageCreationFailed: "Message creation failed",
+  chatNotFound: "Chat not found",
 };
 
 const modelName = {

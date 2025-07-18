@@ -19,6 +19,7 @@ exports.isAuthenticated = catchAsyncFunc(async (req, res, next) => {
   if (!user.is_active) return response401(res, msg.accountInActivated);
 
   req.userId = user._id;
+  req.user = user;
 
   next();
 });

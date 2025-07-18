@@ -11,6 +11,7 @@ const findChat = async (payload) => {
 };
 
 const findChatsByUser = async (userId) => {
+  console.log("userId", userId);
   try {
     const _id = new mongoose.Types.ObjectId(userId);
     const pipeline = [
@@ -46,6 +47,21 @@ const findChatsByUser = async (userId) => {
       { $unwind: "$participantsDetails" },
 
       {
+        $lookup: {
+          from: modelName.MESSAGE,
+          localField: "latest_message",
+          foreignField: "_id",
+          as: "lastMessage",
+        },
+      },
+      {
+        $unwind: {
+          path: "$lastMessage",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      { $sort: { updatedAt: -1 } },
+      {
         $project: {
           _id: 1,
           is_group: 1,
@@ -54,10 +70,10 @@ const findChatsByUser = async (userId) => {
 
           participant: {
             _id: "$participantsDetails._id",
-            firstName: "$participantsDetails.first_name",
-            lastName: "$participantsDetails.last_name",
+            first_name: "$participantsDetails.first_name",
+            last_name: "$participantsDetails.last_name",
             email: "$participantsDetails.email",
-            activeStatus: "$participantsDetails.active_status",
+            active_status: "$participantsDetails.active_status",
           },
         },
       },

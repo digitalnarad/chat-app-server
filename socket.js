@@ -1,7 +1,12 @@
 // /utils/socket.js
 
 const { verifyToken } = require("./lib/token_manager");
-const { user_services, message_services, chat_services } = require("./service");
+const {
+  user_services,
+  message_services,
+  chat_services,
+  request_services,
+} = require("./service");
 
 module.exports = function initSocket(io) {
   // 1️⃣ Authenticate every socket connection
@@ -30,6 +35,7 @@ module.exports = function initSocket(io) {
   io.on("connection", async (socket) => {
     console.log("🔌 User connected:", socket.userId);
     let userId = socket.userId;
+    onlineUsers.set(userId, socket.id);
     io.emit("update-user-status", { userId, status: "online", at: new Date() });
     try {
       await user_services.updateUser(
@@ -84,8 +90,7 @@ module.exports = function initSocket(io) {
           await chat_services.updateChat(
             { _id: chat_id },
             {
-              latestMessage: newMessage._id,
-              updatedAt: Date.now(),
+              latest_message: newMessage._id,
             }
           );
 
@@ -104,6 +109,90 @@ module.exports = function initSocket(io) {
         }
       }
     );
+
+    socket.on("sent-new-request", async (payload, callback) => {
+      console.log("payload", payload);
+      try {
+        const { receiver_id, message } = payload;
+        const sender_id = socket.userId;
+
+        const [req1, req2] = await Promise.all([
+          request_services.findOneRequests({ sender_id, receiver_id }),
+          request_services.findOneRequests({
+            sender_id: receiver_id,
+            receiver_id: sender_id,
+          }),
+        ]);
+
+        const existing = req1 || req2;
+
+        if (existing?.status === "pending") {
+          return callback({
+            success: false,
+            message: "Request already pending",
+            payload: {},
+          });
+        }
+
+        const newRequest = existing
+          ? await request_services.updateRequest(
+              { _id: existing._id },
+              { status: "pending" }
+            )
+          : await request_services.createRequest({
+              sender_id,
+              receiver_id,
+              message,
+            });
+
+        const receiverSocketId = onlineUsers.get(receiver_id);
+        if (receiverSocketId) {
+          io.to(receiverSocketId).emit("change-request", {
+            payload: newRequest,
+          });
+        }
+
+        callback({
+          success: true,
+          message: "Request sent successfully",
+          payload: newRequest,
+        });
+      } catch (err) {
+        console.error("Request Error:", err);
+        callback({
+          success: false,
+          message: "Server error",
+          payload: {},
+        });
+      }
+    });
+
+    socket.on("cancel-request", async (payload, callback) => {
+      try {
+        const sender_id = socket.userId;
+        const { receiver_id } = payload;
+
+        await request_services.deleteRequest({ sender_id, receiver_id });
+
+        const receiverSocketId = onlineUsers.get(receiver_id);
+        if (receiverSocketId) {
+          io.to(receiverSocketId).emit("change-request", {});
+        }
+
+        callback({
+          success: true,
+          message: "Request canceled successfully",
+          payload: {},
+        });
+      } catch (error) {
+        console.error("Request Error:", error);
+        callback({
+          success: false,
+          message: "Server error",
+          payload: {},
+        });
+      }
+    });
 
     // 💬 Typing indicator
     socket.on("typing", ({ chatId, isTyping }) => {

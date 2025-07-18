@@ -1,5 +1,6 @@
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
+const { request } = require("http");
 
 const msg = {
   notFound: "Data not found",
@@ -28,12 +29,22 @@ const msg = {
   messageFetchFailed: "Failed to fetch messages",
   messageCreationFailed: "Message creation failed",
   chatNotFound: "Chat not found",
+  userNameExit: "User name already exist.",
+  userNameVerified: "User name successfully Verified.",
+  requestCreatedSuccess: "Request sent successfully.",
+  requestAlreadyPending: "Request already pending.",
+  requestAcceptedSuccess: "Request accepted successfully.",
+  requestRejectedSuccess: "Request rejected successfully.",
+  requestNotFound: "Request not found.",
+  requestAlreadyAccepted: "Request already accepted.",
+  requestAlreadyRejected: "Request already rejected.",
 };
 
 const modelName = {
   USER: "users",
   CHAT: "chats",
   MESSAGE: "messages",
+  REQUEST: "requests",
 };
 
 const hashPassword = (password) => {

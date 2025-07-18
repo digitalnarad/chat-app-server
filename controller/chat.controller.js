@@ -12,7 +12,7 @@ const createChat = catchAsyncFunc(async (req, res) => {
   chatData.participants.push(userId);
 
   const chat = await chat_services.registerChat(chatData);
-  if (!chat) return response400(res, msg.chatCreationFailed);
+  if (!chat.length === 0) return response400(res, msg.chatCreationFailed);
 
   return response200(res, msg.chatCreatedSuccess, chat);
 });
@@ -24,6 +24,7 @@ const fetchAllChats = catchAsyncFunc(async (req, res) => {
 
   return response200(res, msg.chatFetchSuccess, chats);
 });
+
 module.exports = {
   createChat,
   fetchAllChats,

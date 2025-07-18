@@ -1,4 +1,12 @@
-module.exports.User = require("./user");
-module.exports.Chat = require("./chat");
-module.exports.Message = require("./messages");
-module.exports.Request = require("./request");
+// models/index.js
+const User = require("./Users");
+const Chat = require("./chat");
+const Message = require("./messages");
+const Request = require("./request");
+
+module.exports = {
+  User,
+  Chat,
+  Message,
+  Request,
+};

@@ -23,3 +23,23 @@ exports.isAuthenticated = catchAsyncFunc(async (req, res, next) => {
 
   next();
 });
+
+exports.isSocketAuthenticated = catchAsyncFunc(async (socket, next) => {
+  try {
+    const token = socket.handshake?.auth?.token || "";
+    if (!token) return next(new Error("No token"));
+
+    const data = await verifyToken(token);
+
+    if (!data?.user_id) throw new Error("Invalid token");
+
+    const user = await user_services.findUser({ _id: data.user_id });
+    if (!user) throw new Error("User not found");
+
+    socket.userId = data.user_id;
+
+    next();
+  } catch (err) {
+    next(new Error("Unauthorized"));
+  }
+});

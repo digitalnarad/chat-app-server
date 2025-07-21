@@ -1,52 +1,42 @@
 // /utils/socket.js
 
-const { verifyToken } = require("./lib/token_manager");
+const { isSocketAuthenticated } = require("../middleware/auth");
+const catchAsyncFunc = require("../middleware/catchAsyncFunc");
 const {
   user_services,
   message_services,
   chat_services,
   request_services,
-} = require("./service");
+} = require("../service");
 
 module.exports = function initSocket(io) {
   // 1️⃣ Authenticate every socket connection
   let onlineUsers = new Map();
 
-  io.use(async (socket, next) => {
-    try {
-      const token = socket.handshake?.auth?.token || "";
-      if (!token) return next(new Error("No token"));
-
-      const data = await verifyToken(token);
-
-      if (!data?.user_id) throw new Error("Invalid token");
-
-      const user = await user_services.findUser({ _id: data.user_id });
-      if (!user) throw new Error("User not found");
-
-      socket.userId = data.user_id;
-
-      next();
-    } catch (err) {
-      next(new Error("Unauthorized"));
-    }
-  });
+  io.use(isSocketAuthenticated);
 
   io.on("connection", async (socket) => {
-    console.log("🔌 User connected:", socket.userId);
     let userId = socket.userId;
     onlineUsers.set(userId, socket.id);
-    io.emit("update-user-status", { userId, status: "online", at: new Date() });
-    try {
-      await user_services.updateUser(
-        { _id: userId },
-        {
-          active_status: { status: "online", at: new Date() },
-        }
-      );
-    } catch (err) {
-      console.error("Error updating user status:", err);
-    }
+
+    catchAsyncFunc(async ({ userId, status }) => {
+      // onlineUsers.delete(userId);
+      io.emit("send-user-status", {
+        userId,
+        status: status,
+        at: new Date(),
+      });
+      try {
+        await user_services.updateUser(
+          { _id: userId },
+          {
+            active_status: { status: status, at: new Date() },
+          }
+        );
+      } catch (err) {
+        console.error("Error updating user status:", err);
+      }
+    });
 
     socket.on("join-chat", (chatId) => {
       console.log("join-chat", chatId);
@@ -93,6 +83,8 @@ module.exports = function initSocket(io) {
               latest_message: newMessage._id,
             }
           );
+
+          io.to(chat_id).emit("update-user-last-message", newMessage);
 
           io.to(chat_id).emit("receive-message", newMessage);
           callback({

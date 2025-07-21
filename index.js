@@ -11,8 +11,8 @@ const { Server } = require("socket.io");
 const app = express();
 
 // io server
-const server = http.createServer(app);
-const io = new Server(server, {
+const appServer = http.createServer(app);
+const io = new Server(appServer, {
   cors: { origin: process.env.FRONTEND_URL, methods: ["GET", "POST"] },
 });
 
@@ -35,7 +35,7 @@ app.use((err, req, res, next) => {
 });
 
 connectDatabase();
-server.listen(process.env.PORT || 5000, () =>
+appServer.listen(process.env.PORT || 5000, () =>
   console.log(
     `Server has started. http://localhost:${process.env.PORT || 5000}/`
   )

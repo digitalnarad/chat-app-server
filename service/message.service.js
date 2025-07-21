@@ -10,14 +10,18 @@ const findMessage = async (payload) => {
   }
 };
 
-const findMessagesByChat = async (chat_id, { page, limit }) => {
+const findMessagesByChat = async (
+  chat_id,
+  { page, limit, lastMessageTime = null }
+) => {
   try {
-    const _id = new mongoose.Types.ObjectId(chat_id);
     const skip = (page - 1) * limit;
 
+    const matchStage = { chat_id: new mongoose.Types.ObjectId(chat_id) };
+
     const pipeline = [
-      { $match: { chat_id: _id } },
-      { $sort: { createdAt: -1 } },
+      { $match: matchStage },
+      { $sort: { createdAt: -1, _id: -1 } },
       { $skip: skip },
       { $limit: limit },
     ];
@@ -43,9 +47,29 @@ const updateMessage = async (query, payload) => {
   }
 };
 
+const deleteMessage = async (query) => {
+  try {
+    return await mongoService.deleteDocument(modelName.MESSAGE, query);
+  } catch (error) {
+    throw error;
+  }
+};
+
+const deleteMessagesByChat = async (chat_id) => {
+  try {
+    return await mongoService.deleteDocument(modelName.MESSAGE, {
+      chat_id: new mongoose.Types.ObjectId(chat_id),
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
 module.exports = {
   findMessage,
   registerMessage,
   updateMessage,
   findMessagesByChat,
+  deleteMessage,
+  deleteMessagesByChat,
 };

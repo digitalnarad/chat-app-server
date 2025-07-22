@@ -3,12 +3,10 @@ const { user_services } = require("../../service");
 const sharedState = require("../../socket/sharedState");
 
 const userSocket = (io, socket) => {
-  let onlineUsers = new Map();
-
   // Update user status
-  const handleUpdateStatus = async (statusData, callback) => {
+  const handleUpdateStatus = async (payload, callback) => {
     try {
-      const { status } = statusData;
+      const { status } = payload;
       const userId = socket.userId;
       const timestamp = new Date();
 

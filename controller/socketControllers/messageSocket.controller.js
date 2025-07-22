@@ -3,11 +3,9 @@ const { message_services, chat_services } = require("../../service");
 
 const messageSocket = (io, socket) => {
   // Send message
-  const handleSendMessage = async (
-    { chat_id, message, message_type },
-    callback
-  ) => {
+  const handleSendMessage = async (payload, callback) => {
     try {
+      const { chat_id, message, message_type } = payload;
       const chat = await chat_services.findChat({ _id: chat_id });
       if (!chat) {
         return callback({
@@ -66,8 +64,9 @@ const messageSocket = (io, socket) => {
   };
 
   // Mark messages as read
-  const handleMarkAsRead = async ({ chatId }, callback) => {
+  const handleMarkAsRead = async (payload, callback) => {
     try {
+      const { chatId } = payload;
       // Update messages in database
       await message_services.markMessagesAsRead(chatId, socket.userId);
 

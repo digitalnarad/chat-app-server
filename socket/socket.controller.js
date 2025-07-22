@@ -38,14 +38,22 @@ module.exports = function initSocket(io) {
       }
     });
 
-    socket.on("join-chat", (chatId) => {
+    socket.on("join-chat", ({ chatId }, callback) => {
       console.log("join-chat", chatId);
       socket.join(chatId);
+      callback({
+        success: true,
+        message: "Joined chat successfully",
+      });
     });
 
     socket.on("leave-chat", (chatId) => {
       console.log("leave-chat", chatId);
       socket.leave(chatId);
+      callback({
+        success: true,
+        message: "Left chat successfully",
+      });
     });
 
     // ✉️ Send a new message

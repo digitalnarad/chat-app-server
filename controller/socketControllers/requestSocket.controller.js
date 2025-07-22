@@ -18,24 +18,19 @@ const requestSocket = (io, socket) => {
 
       const existing = req1 || req2;
 
-      if (existing?.status === "pending") {
+      if (existing?.status) {
         return callback({
           success: false,
-          message: "Request already pending",
+          message: "Request already added",
           payload: {},
         });
       }
 
-      const newRequest = existing
-        ? await request_services.updateRequest(
-            { _id: existing._id },
-            { status: "pending" }
-          )
-        : await request_services.createRequest({
-            sender_id,
-            receiver_id,
-            message,
-          });
+      const newRequest = await request_services.createRequest({
+        sender_id,
+        receiver_id,
+        message,
+      });
 
       // Send to specific user if online
       const receiverSocketId = sharedState.getSocketId(receiver_id);
@@ -82,6 +77,7 @@ const requestSocket = (io, socket) => {
       await request_services.deleteRequest({ _id: requested._id });
 
       const receiverSocketId = sharedState.getSocketId(receiver_id);
+
       if (receiverSocketId) {
         io.to(receiverSocketId).emit("change-request", {
           payload: requested,

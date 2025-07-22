@@ -11,7 +11,7 @@ const findChat = async (payload) => {
 };
 
 const findChatsByUser = async (userId) => {
-  console.log("userId", userId);
+  // console.log("userId", userId);
   try {
     const _id = new mongoose.Types.ObjectId(userId);
     const pipeline = [

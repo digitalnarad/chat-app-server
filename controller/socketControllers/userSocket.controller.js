@@ -7,6 +7,7 @@ const userSocket = (io, socket) => {
   const handleUpdateStatus = async (payload, callback) => {
     try {
       const { status } = payload;
+      console.log("status", status);
       const userId = socket.userId;
       const timestamp = new Date();
 

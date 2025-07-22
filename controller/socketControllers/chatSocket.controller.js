@@ -4,7 +4,7 @@ const { chat_services } = require("../../service");
 const chatSocket = (io, socket) => {
   // Join chat room
   const handleJoinChat = ({ chatId }, callback = () => {}) => {
-    console.log("join-chat", chatId);
+    // console.log("join-chat", chatId);
     socket.join(chatId);
     callback({
       success: true,
@@ -14,7 +14,7 @@ const chatSocket = (io, socket) => {
 
   // Leave chat room
   const handleLeaveChat = ({ chatId }, callback = () => {}) => {
-    console.log("leave-chat", chatId);
+    // console.log("leave-chat", chatId);
     socket.leave(chatId);
     callback({
       success: true,

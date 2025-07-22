@@ -58,8 +58,7 @@ const requestSocket = (io, socket) => {
   // Cancel friend request
   const handleCancelRequest = async (payload, callback) => {
     try {
-      const sender_id = socket.userId;
-      const { receiver_id } = payload;
+      const { receiver_id, sender_id } = payload;
 
       const requested = await request_services.findOneRequests({
         sender_id,
@@ -123,8 +122,8 @@ const requestSocket = (io, socket) => {
       // Notify sender
       function notifyUser(socketId) {
         if (!socketId) return;
-        io.to(socketId).emit("request-accepted", { payload: updatedRequest });
         io.to(socketId).emit("new-chat", { payload: newChat });
+        io.to(socketId).emit("change-request", { payload: updatedRequest });
       }
 
       notifyUser(sharedState.getSocketId(sender_id));

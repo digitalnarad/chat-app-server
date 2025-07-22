@@ -5,7 +5,7 @@ const { msg } = require("../utils/constant");
 
 const createChat = catchAsyncFunc(async (req, res) => {
   const userId = req.userId;
-  console.log("userId", userId);
+  // console.log("userId", userId);
 
   const chatData = req.body;
   chatData.participants = chatData.participants || [];

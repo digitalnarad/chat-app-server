@@ -7,7 +7,6 @@ const userSocket = (io, socket) => {
   const handleUpdateStatus = async (payload, callback) => {
     try {
       const { status } = payload;
-      console.log("status", status);
       const userId = socket.userId;
       const timestamp = new Date();
 
@@ -40,15 +39,15 @@ const userSocket = (io, socket) => {
 
   // Handle user connection
   const handleUserConnect = async () => {
-    const userId = socket.userId;
+    // const userId = socket.userId;
+    const userId = socket.user._id.toString();
     sharedState.addUser(userId, socket.id);
   };
 
   // Register event listeners
   socket.on("update-my-status", handleUpdateStatus);
   socket.on("disconnect", () => {
-    console.log("disconnect", socket.userId);
-    const userId = socket.userId;
+    const userId = socket.user._id.toString();
     sharedState.removeUser(userId);
   });
 

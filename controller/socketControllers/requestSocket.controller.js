@@ -115,23 +115,25 @@ const requestSocket = (io, socket) => {
       const { sender_id, receiver_id } = acceptedRequest;
 
       const updatedRequest = await request_services.updateRequest(
-        { _id: request_id },
+        { _id: id },
         { status: "accepted" }
       );
 
       const newChat = await chat_services.registerChat({
-        participants: [sender_id, receiver_id],
+        participants: [sender_id.toString(), receiver_id.toString()],
       });
 
       // Notify sender
       function notifyUser(socketId) {
         if (!socketId) return;
-        io.to(socketId).emit("new-chat", { payload: newChat });
-        io.to(socketId).emit("accept-request", { payload: updatedRequest });
+        io.to(socketId).emit("new-chat", { ...newChat.toObject() });
+        io.to(socketId).emit("accept-request", {
+          ...updatedRequest,
+        });
       }
 
-      notifyUser(sharedState.getSocketId(sender_id));
-      notifyUser(sharedState.getSocketId(receiver_id));
+      notifyUser(sharedState.getSocketId(sender_id.toString()));
+      notifyUser(sharedState.getSocketId(receiver_id.toString()));
 
       callback({
         success: true,

@@ -37,6 +37,7 @@ exports.isSocketAuthenticated = catchAsyncFunc(async (socket, next) => {
     if (!user) throw new Error("User not found");
 
     socket.userId = data.user_id;
+    socket.user = user;
 
     next();
   } catch (err) {

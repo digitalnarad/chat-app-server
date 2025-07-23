@@ -35,8 +35,12 @@ const requestSocket = (io, socket) => {
       // Send to specific user if online
       const receiverSocketId = sharedState.getSocketId(receiver_id);
       if (receiverSocketId) {
-        io.to(receiverSocketId).emit("change-request", {
-          payload: newRequest,
+        io.to(receiverSocketId).emit("receive-request", {
+          request: {
+            ...newRequest.toObject(),
+            senderDetails: socket.user,
+          },
+          message: "New friend request",
         });
       }
 
@@ -59,10 +63,12 @@ const requestSocket = (io, socket) => {
   const handleCancelRequest = async (payload, callback) => {
     try {
       const { receiver_id, sender_id } = payload;
+      console.log("receiver_id, sender_id", receiver_id, sender_id);
 
       const requested = await request_services.findOneRequests({
         sender_id,
         receiver_id,
+        status: "pending",
       });
 
       if (!requested) {
@@ -78,9 +84,7 @@ const requestSocket = (io, socket) => {
       const receiverSocketId = sharedState.getSocketId(receiver_id);
 
       if (receiverSocketId) {
-        io.to(receiverSocketId).emit("change-request", {
-          payload: requested,
-        });
+        io.to(receiverSocketId).emit("remove-request", requested);
       }
 
       callback({
@@ -123,7 +127,7 @@ const requestSocket = (io, socket) => {
       function notifyUser(socketId) {
         if (!socketId) return;
         io.to(socketId).emit("new-chat", { payload: newChat });
-        io.to(socketId).emit("change-request", { payload: updatedRequest });
+        io.to(socketId).emit("accept-request", { payload: updatedRequest });
       }
 
       notifyUser(sharedState.getSocketId(sender_id));

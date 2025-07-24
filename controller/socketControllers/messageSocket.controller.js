@@ -1,11 +1,16 @@
 // controllers/socketControllers/messageController.js
-const { message_services, chat_services } = require("../../service");
+const {
+  message_services,
+  chat_services,
+  user_services,
+} = require("../../service");
+const sharedState = require("../../socket/sharedState");
 
 const messageSocket = (io, socket) => {
   // Send message
   const handleSendMessage = async (payload, callback) => {
     try {
-      const { chat_id, message, message_type } = payload;
+      const { chat_id, message, message_type, receiver_id } = payload;
       const chat = await chat_services.findChat({ _id: chat_id });
       if (!chat) {
         return callback({
@@ -15,12 +20,14 @@ const messageSocket = (io, socket) => {
         });
       }
 
-      const newMessage = await message_services.registerMessage({
+      const createdMessage = await message_services.registerMessage({
         chat_id: chat_id,
         sender: socket.userId,
         message: message,
         message_type: message_type,
       });
+
+      const newMessage = createdMessage.toObject();
 
       if (!newMessage) {
         return callback({
@@ -30,14 +37,32 @@ const messageSocket = (io, socket) => {
         });
       }
 
-      await chat_services.updateChat(
+      const updatedChat = await chat_services.updateChat(
         { _id: chat_id },
-        { latest_message: newMessage._id }
+        {
+          latest_message: newMessage._id,
+        }
+      );
+
+      const unreadCount = await message_services.getUnreadMessageCountByCHatId(
+        chat_id,
+        receiver_id
       );
 
       // Emit to all users in the chat room
-      io.to(chat_id).emit("update-user-last-message", newMessage);
       io.to(chat_id).emit("receive-message", newMessage);
+
+      const newChat = {
+        ...updatedChat,
+        lastMessage: newMessage.message,
+        unread_count: unreadCount,
+        participant: socket.user,
+      };
+
+      const receiverSocket = sharedState.getSocketId(receiver_id);
+      if (receiverSocket) {
+        io.to(receiverSocket).emit("receive-updated-message-chat", newChat);
+      }
 
       callback({
         success: true,
@@ -66,13 +91,22 @@ const messageSocket = (io, socket) => {
   // Mark messages as read
   const handleMarkAsRead = async (payload, callback) => {
     try {
-      const { chatId } = payload;
+      const { chat_id } = payload;
       // Update messages in database
-      await message_services.markMessagesAsRead(chatId, socket.userId);
+
+      // const unreadMessages = await message_services.findMessage({
+      //   chat_id: chat_id,
+      //   sender: { $ne: socket.userId }, // Exclude user's own messages
+      //   read_by: {
+      //     $not: { $elemMatch: { $eq: socket.userId } }, // Correct array check
+      //   },
+      // });
+
+      await message_services.markMessagesAsRead(chat_id, socket.userId);
 
       // Notify other participants
-      socket.to(chatId).emit("read-receipt", {
-        chatId,
+      socket.to(chat_id).emit("read-receipt", {
+        chatId: chat_id,
         userId: socket.userId,
         readAt: new Date(),
       });
@@ -80,12 +114,14 @@ const messageSocket = (io, socket) => {
       callback({
         success: true,
         message: "Messages marked as read",
+        payload: {},
       });
     } catch (error) {
       console.error("Mark as read error:", error);
       callback({
         success: false,
         message: "Failed to mark as read",
+        payload: {},
       });
     }
   };
@@ -93,7 +129,7 @@ const messageSocket = (io, socket) => {
   // Register event listeners
   socket.on("send-message", handleSendMessage);
   socket.on("typing", handleTyping);
-  // socket.on("mark-as-read", handleMarkAsRead);
+  socket.on("mark-as-read", handleMarkAsRead);
 };
 
 module.exports = messageSocket;

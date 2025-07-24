@@ -15,7 +15,19 @@ const chatSchema = mongoose.Schema(
     ],
     latest_message: { type: mongoose.Schema.Types.ObjectId, ref: "Message" },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    indexes: [
+      // Critical for user chat retrieval
+      { participants: 1 },
+
+      // Compound index for sorting
+      { participants: 1, updatedAt: -1 },
+
+      // Optimize last message lookups
+      { latest_message: 1 },
+    ],
+  }
 );
 
 module.exports = mongoose.model(modelName.CHAT, chatSchema);

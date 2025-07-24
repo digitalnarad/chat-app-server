@@ -7,6 +7,7 @@ const messageSchema = mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Chat",
       required: true,
+      index: true,
     },
     sender: {
       type: mongoose.Schema.Types.ObjectId,
@@ -15,13 +16,25 @@ const messageSchema = mongoose.Schema(
     },
     message_type: {
       type: String,
-      enum: ["text", "image", "file", "chat-info"],
+      enum: ["text", "image", "file", "join-chat"],
       default: "text",
     },
     message: { type: String, required: true },
-    readBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    read_by: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    index: [
+      // For fetching chat messages in chronological order
+      { chat_id: 1, createdAt: -1 },
+
+      // For unread message tracking
+      { chat_id: 1, readBy: 1 },
+
+      // For sender-specific queries with timestamps
+      { sender: 1, createdAt: -1 },
+    ],
+  }
 );
 
 module.exports = mongoose.model(modelName.MESSAGE, messageSchema);

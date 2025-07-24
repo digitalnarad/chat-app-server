@@ -11,7 +11,6 @@ const getPendingMessageRequests = catchAsyncFunc(async (req, res) => {
 
 const deleteRequest = catchAsyncFunc(async (req, res) => {
   const { id } = req.params;
-  console.log("id", id);
   const deletedRequest = await request_services.findOneRequests({
     _id: id,
     status: "pending",

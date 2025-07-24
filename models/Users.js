@@ -44,8 +44,6 @@ const userSchema = mongoose.Schema(
         default: Date.now,
       },
     },
-
-    contacts: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   },
   { timestamps: true }
 );

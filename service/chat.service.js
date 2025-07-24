@@ -11,72 +11,116 @@ const findChat = async (payload) => {
 };
 
 const findChatsByUser = async (userId) => {
-  // console.log("userId", userId);
   try {
     const _id = new mongoose.Types.ObjectId(userId);
     const pipeline = [
+      // 1. Match chats containing current user
       { $match: { participants: _id } },
+
       {
-        $addFields: {
-          participantIds: {
-            $cond: [
-              { $eq: ["$is_group", false] },
-              {
-                $filter: {
-                  input: "$participants",
-                  as: "pid",
-                  cond: {
-                    $ne: ["$$pid", _id],
-                  },
+        $lookup: {
+          from: "messages",
+          let: { chatId: "$_id", userId: _id },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$chat_id", "$$chatId"] },
+                    { $ne: ["$sender", "$$userId"] },
+                    { $not: { $in: ["$$userId", "$read_by"] } },
+                  ],
                 },
               },
-              "$participants",
+            },
+            { $count: "count" },
+          ],
+          as: "unread",
+        },
+      },
+
+      // 3. Handle participants for 1:1 chats
+      {
+        $addFields: {
+          // Extract the other participant ID (non-current user)
+          otherParticipantId: {
+            $cond: [
+              { $not: "$is_group" }, // Only for 1:1 chats
+              {
+                $arrayElemAt: [
+                  {
+                    $filter: {
+                      input: "$participants",
+                      as: "pid",
+                      cond: { $ne: ["$$pid", _id] },
+                    },
+                  },
+                  0, // Get first element (the other user)
+                ],
+              },
+              null, // For group chats
             ],
           },
         },
       },
+
+      // 4. Lookup other participant details
       {
         $lookup: {
-          from: modelName.USER,
-          localField: "participantIds",
+          from: "users",
+          localField: "otherParticipantId",
           foreignField: "_id",
-          as: "participantsDetails",
+          as: "participantDetails",
         },
       },
 
-      { $unwind: "$participantsDetails" },
-
+      // 5. Lookup last message
       {
         $lookup: {
-          from: modelName.MESSAGE,
+          from: "messages",
           localField: "latest_message",
           foreignField: "_id",
           as: "lastMessage",
         },
       },
+
+      // 6. Format fields
       {
-        $unwind: {
-          path: "$lastMessage",
-          preserveNullAndEmptyArrays: true,
+        $addFields: {
+          unread_count: {
+            $ifNull: [{ $arrayElemAt: ["$unread.count", 0] }, 0],
+          },
+          lastMessage: { $arrayElemAt: ["$lastMessage", 0] },
+          participant: { $arrayElemAt: ["$participantDetails", 0] },
         },
       },
-      { $sort: { updatedAt: -1 } },
+
+      // 7. Final projection
       {
         $project: {
           _id: 1,
           is_group: 1,
-          lastMessage: 1,
+          name: 1,
           updatedAt: 1,
-
+          unread_count: 1,
+          lastMessage: "$lastMessage.message",
           participant: {
-            _id: "$participantsDetails._id",
-            first_name: "$participantsDetails.first_name",
-            last_name: "$participantsDetails.last_name",
-            email: "$participantsDetails.email",
-            active_status: "$participantsDetails.active_status",
+            $cond: {
+              if: "$is_group",
+              then: null,
+              else: {
+                _id: "$participant._id",
+                first_name: "$participant.first_name",
+                last_name: "$participant.last_name",
+                active_status: "$participant.active_status",
+              },
+            },
           },
         },
       },
+
+      // 8. Sort by recent activity
+      { $sort: { updatedAt: -1 } },
     ];
     return await mongoService.aggregation(modelName.CHAT, pipeline);
   } catch (error) {

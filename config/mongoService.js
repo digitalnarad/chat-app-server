@@ -100,6 +100,15 @@ const populate = async (
     .sort(sort);
 };
 
+const findPaginateQuery = async (modelName, criteria, sort, limit, skip) => {
+  return await mongoose
+    .model(modelName)
+    .find(criteria, {}, { lean: true })
+    .sort(sort)
+    .skip(skip)
+    .limit(limit);
+};
+
 // count documents
 const countDocument = async (modelName, criteria) => {
   return await mongoose.model(modelName).countDocuments(criteria);
@@ -126,4 +135,5 @@ module.exports = {
   countDocument,
   deleteDocument,
   deleteManyDocument,
+  findPaginateQuery,
 };

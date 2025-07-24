@@ -1,4 +1,8 @@
-const { request_services, chat_services } = require("../../service");
+const {
+  request_services,
+  chat_services,
+  message_services,
+} = require("../../service");
 const sharedState = require("../../socket/sharedState");
 
 const requestSocket = (io, socket) => {
@@ -63,7 +67,6 @@ const requestSocket = (io, socket) => {
   const handleCancelRequest = async (payload, callback) => {
     try {
       const { receiver_id, sender_id } = payload;
-      console.log("receiver_id, sender_id", receiver_id, sender_id);
 
       const requested = await request_services.findOneRequests({
         sender_id,
@@ -93,7 +96,6 @@ const requestSocket = (io, socket) => {
         payload: {},
       });
     } catch (error) {
-      console.error("Cancel request error:", error);
       callback({
         success: false,
         message: "Server error",
@@ -114,22 +116,37 @@ const requestSocket = (io, socket) => {
 
       const { sender_id, receiver_id } = acceptedRequest;
 
-      const updatedRequest = await request_services.updateRequest(
-        { _id: id },
-        { status: "accepted" }
-      );
-
       const newChat = await chat_services.registerChat({
         participants: [sender_id.toString(), receiver_id.toString()],
+        unread_messages: [],
       });
+
+      const chatId = newChat.toObject()._id;
+
+      const updatedRequest = await request_services.updateRequest(
+        { _id: id },
+        { status: "accepted", chat_id: chatId }
+      );
+
+      const newMessage = await message_services.registerMessage({
+        chat_id: chatId,
+        sender: socket.userId,
+        message: `${socket.user.user_name} accepted your friend request`,
+        message_type: "join-chat",
+      });
+
+      await chat_services.updateChat(
+        { _id: chatId },
+        {
+          latest_message: newMessage._id,
+        }
+      );
 
       // Notify sender
       function notifyUser(socketId) {
         if (!socketId) return;
-        io.to(socketId).emit("new-chat", { ...newChat.toObject() });
-        io.to(socketId).emit("accept-request", {
-          ...updatedRequest,
-        });
+        io.to(socketId).emit("new-chat", {});
+        io.to(socketId).emit("accept-request", updatedRequest._id);
       }
 
       notifyUser(sharedState.getSocketId(sender_id.toString()));
@@ -141,7 +158,7 @@ const requestSocket = (io, socket) => {
         payload: updatedRequest,
       });
     } catch (error) {
-      console.error("Accept request error:", error);
+      console.log("error", error);
       callback({
         success: false,
         message: "Server error",

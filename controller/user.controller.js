@@ -32,7 +32,6 @@ const userSignUp = catchAsyncFunc(async (req, res) => {
   const newChat = await chat_services.registerChat({
     participants: [newUser._id, newUser._id],
   });
-  console.log("newChat", newChat);
 
   return response200(res, msg.signupSuccess, []);
 });

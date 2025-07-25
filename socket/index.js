@@ -7,8 +7,6 @@ module.exports = function initSocket(io) {
   io.use(isSocketAuthenticated);
 
   io.on("connection", async (socket) => {
-    console.log(`🔌 User connected: ${socket.userId}`);
-
     // Initialize all socket event controllers
     initializeControllers(io, socket);
   });

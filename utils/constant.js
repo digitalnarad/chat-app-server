@@ -1,6 +1,5 @@
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
-const { request } = require("http");
 
 const msg = {
   notFound: "Data not found",

@@ -80,8 +80,10 @@ const messageSocket = (io, socket) => {
   };
 
   // Typing indicator
-  const handleTyping = ({ chatId, isTyping }) => {
-    socket.to(chatId).emit("typing", {
+  const handleTyping = ({ chatId, isTyping, receiver_id }) => {
+    console.log("chatId, isTyping", chatId, isTyping);
+    const socketId = sharedState.getSocketId(receiver_id);
+    socket.to(socketId).emit("typing", {
       chatId,
       userId: socket.userId,
       isTyping,

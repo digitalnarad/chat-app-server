@@ -81,7 +81,6 @@ const messageSocket = (io, socket) => {
 
   // Typing indicator
   const handleTyping = ({ chatId, isTyping, receiver_id }) => {
-    console.log("chatId, isTyping", chatId, isTyping);
     const socketId = sharedState.getSocketId(receiver_id);
     socket.to(socketId).emit("typing", {
       chatId,
@@ -93,23 +92,17 @@ const messageSocket = (io, socket) => {
   // Mark messages as read
   const handleMarkAsRead = async (payload, callback) => {
     try {
-      const { chat_id } = payload;
+      const { chat_id, receiver_id } = payload;
+
       // Update messages in database
-
-      // const unreadMessages = await message_services.findMessage({
-      //   chat_id: chat_id,
-      //   sender: { $ne: socket.userId }, // Exclude user's own messages
-      //   read_by: {
-      //     $not: { $elemMatch: { $eq: socket.userId } }, // Correct array check
-      //   },
-      // });
-
       await message_services.markMessagesAsRead(chat_id, socket.userId);
 
+      const receiver_socket = sharedState.getSocketId(receiver_id);
+
       // Notify other participants
-      socket.to(chat_id).emit("read-receipt", {
+      socket.to(receiver_socket).emit("read-receipt", {
         chatId: chat_id,
-        userId: socket.userId,
+        receiver_id: socket.userId,
         readAt: new Date(),
       });
 
